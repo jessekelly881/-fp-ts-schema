@@ -7,6 +7,7 @@ import type { Json } from "@fp-ts/data/Json"
 import type { Option } from "@fp-ts/data/Option"
 import type { Predicate, Refinement } from "@fp-ts/data/Predicate"
 import * as RA from "@fp-ts/data/ReadonlyArray"
+import * as Optic from "@fp-ts/optic"
 import * as A from "@fp-ts/schema/annotation/AST"
 import * as AST from "@fp-ts/schema/AST"
 import * as F from "@fp-ts/schema/data/filter"
@@ -559,6 +560,11 @@ export const transform: <A, B>(
   f: (a: A) => B,
   g: (b: B) => A
 ) => (self: Schema<A>) => Schema<B> = I.transform
+
+export const transformWithOptic = <A, B>(
+  to: Schema<B>,
+  optic: Optic.Iso<A, B>
+) => transform(to, Optic.get(optic), Optic.encode(optic))
 
 // ---------------------------------------------
 // annotations

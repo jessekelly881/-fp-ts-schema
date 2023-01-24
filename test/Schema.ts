@@ -1,4 +1,5 @@
 import { pipe } from "@fp-ts/data/Function"
+import * as Optic from "@fp-ts/optic"
 import * as AST from "@fp-ts/schema/AST"
 import * as P from "@fp-ts/schema/Parser"
 import * as S from "@fp-ts/schema/Schema"
@@ -298,5 +299,12 @@ describe.concurrent("Schema", () => {
       expect(is({ c: false })).toBe(false)
       expect(is({ d: 42 })).toBe(false)
     })
+  })
+})
+
+describe.concurrent("transforms", () => {
+  it("transformWithOptic", () => {
+    const optic = Optic.iso<readonly [number, number], number>((x) => x[0], (x) => [x, x])
+    pipe(S.tuple(S.number, S.number), S.transformWithOptic(S.number, optic))
   })
 })
