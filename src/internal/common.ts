@@ -94,7 +94,7 @@ export const makePretty = <A>(
 // ---------------------------------------------
 
 /** @internal */
-export const makeSchema = <A>(ast: AST.AST): Schema<A> => ({ ast }) as any
+export const makeSchema = <A, T extends AST.AST>(ast: T): Schema<A, T> => ({ A: (_: A) => _, ast })
 
 /** @internal */
 export const typeAlias = (
@@ -180,34 +180,34 @@ export const uniqueSymbol = <S extends symbol>(
 ): Schema<S> => makeSchema(AST.uniqueSymbol(symbol, annotations))
 
 /** @internal */
-export const never: Schema<never> = makeSchema(AST.neverKeyword)
+export const never: Schema<never, AST.NeverKeyword> = makeSchema(AST.neverKeyword)
 
 /** @internal */
-export const unknown: Schema<unknown> = makeSchema(AST.unknownKeyword)
+export const unknown: Schema<unknown, AST.UnknownKeyword> = makeSchema(AST.unknownKeyword)
 
 /** @internal */
-export const any: Schema<any> = makeSchema(AST.anyKeyword)
+export const any: Schema<any, AST.AnyKeyword> = makeSchema(AST.anyKeyword)
 
 /** @internal */
 export const isUndefined = (u: unknown): u is undefined => u === undefined
 
 /** @internal */
-export const _undefined: Schema<undefined> = makeSchema(AST.undefinedKeyword)
+export const _undefined: Schema<undefined, AST.UndefinedKeyword> = makeSchema(AST.undefinedKeyword)
 
 /** @internal */
-export const _null: Schema<null> = makeSchema(AST.literal(null))
+export const _null: Schema<null, AST.Literal> = makeSchema(AST.literal(null))
 
 /** @internal */
-export const _void: Schema<void> = makeSchema(AST.voidKeyword)
+export const _void: Schema<void, AST.VoidKeyword> = makeSchema(AST.voidKeyword)
 
 /** @internal */
-export const string: Schema<string> = makeSchema(AST.stringKeyword)
+export const string: Schema<string, AST.StringKeyword> = makeSchema(AST.stringKeyword)
 
 /** @internal */
-export const number: Schema<number> = makeSchema(AST.numberKeyword)
+export const number: Schema<number, AST.NumberKeyword> = makeSchema(AST.numberKeyword)
 
 /** @internal */
-export const boolean: Schema<boolean> = makeSchema(AST.booleanKeyword)
+export const boolean: Schema<boolean, AST.BooleanKeyword> = makeSchema(AST.booleanKeyword)
 
 /** @internal */
 export const isNever = (u: unknown): u is never => false
@@ -216,16 +216,16 @@ export const isNever = (u: unknown): u is never => false
 export const isBigInt = (u: unknown): u is bigint => typeof u === "bigint"
 
 /** @internal */
-export const bigint: Schema<bigint> = makeSchema(AST.bigIntKeyword)
+export const bigint: Schema<bigint, AST.BigIntKeyword> = makeSchema(AST.bigIntKeyword)
 
 /** @internal */
 export const isSymbol = (u: unknown): u is symbol => typeof u === "symbol"
 
 /** @internal */
-export const symbol: Schema<symbol> = makeSchema(AST.symbolKeyword)
+export const symbol: Schema<symbol, AST.SymbolKeyword> = makeSchema(AST.symbolKeyword)
 
 /** @internal */
-export const object: Schema<object> = makeSchema(AST.objectKeyword)
+export const object: Schema<object, AST.ObjectKeyword> = makeSchema(AST.objectKeyword)
 
 /** @internal */
 export const isObject = (u: unknown): u is object => typeof u === "object" && u !== null
@@ -276,24 +276,26 @@ export const struct = <Fields extends Record<PropertyKey, Schema<any>>>(
 /** @internal */
 export const tuple = <Elements extends ReadonlyArray<Schema<any>>>(
   ...elements: Elements
-): Schema<{ readonly [K in keyof Elements]: Infer<Elements[K]> }> =>
+): Schema<{ readonly [K in keyof Elements]: Infer<Elements[K]> }, AST.Tuple> =>
   makeSchema(AST.tuple(elements.map((schema) => AST.element(schema.ast, false)), O.none, true))
 
 /** @internal */
 export const lazy = <A>(
   f: () => Schema<A>,
   annotations?: AST.Annotated["annotations"]
-): Schema<A> => makeSchema(AST.lazy(() => f().ast, annotations))
+): Schema<A, AST.Lazy> => makeSchema(AST.lazy(() => f().ast, annotations))
 
 /** @internal */
-export const array = <A>(item: Schema<A>): Schema<ReadonlyArray<A>> =>
-  makeSchema(AST.tuple([], O.some([item.ast]), true))
+export const array = <A, E extends AST.AST = AST.AST>(
+  item: Schema<A, E>
+): Schema<ReadonlyArray<A>, AST.Tuple> => makeSchema(AST.tuple([], O.some([item.ast]), true))
 
 /** @internal */
 export const record = <K extends string | symbol, V>(
   key: Schema<K>,
   value: Schema<V>
-): Schema<{ readonly [k in K]: V }> => makeSchema(AST.record(key.ast, value.ast, true))
+): Schema<{ readonly [k in K]: V }, AST.TypeLiteral> =>
+  makeSchema(AST.record(key.ast, value.ast, true))
 
 /** @internal */
 export const getKeysForIndexSignature = (

@@ -19,9 +19,9 @@ import type { Parser } from "@fp-ts/schema/Parser"
  * @category model
  * @since 1.0.0
  */
-export interface Schema<A> {
+export interface Schema<A, E extends AST.AST = AST.AST> {
   readonly A: (_: A) => A
-  readonly ast: AST.AST
+  readonly ast: E
 }
 
 /**
@@ -37,7 +37,7 @@ export type Infer<S extends Schema<any>> = Parameters<S["A"]>[0]
  * @category constructors
  * @since 1.0.0
  */
-export const make: <A>(ast: AST.AST) => Schema<A> = I.makeSchema
+export const make: <A, E extends AST.AST = AST.AST>(ast: E) => Schema<A, E> = I.makeSchema
 
 /**
  * @category constructors
@@ -325,18 +325,17 @@ export const keyof = <A>(schema: Schema<A>): Schema<keyof A> => make(AST.keyof(s
  */
 export const tuple: <Elements extends ReadonlyArray<Schema<any>>>(
   ...elements: Elements
-) => Schema<{ readonly [K in keyof Elements]: Infer<Elements[K]> }> = I.tuple
+) => Schema<{ readonly [K in keyof Elements]: Infer<Elements[K]> }, AST.Tuple> = I.tuple
 
 /**
  * @category combinators
  * @since 1.0.0
  */
 export const rest = <R>(rest: Schema<R>) =>
-  <A extends ReadonlyArray<any>>(self: Schema<A>): Schema<readonly [...A, ...Array<R>]> => {
-    if (AST.isTuple(self.ast)) {
-      return make(AST.appendRestElement(self.ast, rest.ast))
-    }
-    throw new Error("`rest` is not supported on this schema")
+  <A extends ReadonlyArray<any>>(
+    self: Schema<A, AST.Tuple>
+  ): Schema<readonly [...A, ...Array<R>], AST.Tuple> => {
+    return make(AST.appendRestElement(self.ast, rest.ast))
   }
 
 /**
@@ -344,11 +343,10 @@ export const rest = <R>(rest: Schema<R>) =>
  * @since 1.0.0
  */
 export const element = <E>(element: Schema<E>) =>
-  <A extends ReadonlyArray<any>>(self: Schema<A>): Schema<readonly [...A, E]> => {
-    if (AST.isTuple(self.ast)) {
-      return make(AST.appendElement(self.ast, AST.element(element.ast, false)))
-    }
-    throw new Error("`element` is not supported on this schema")
+  <A extends ReadonlyArray<any>>(
+    self: Schema<A, AST.Tuple>
+  ): Schema<readonly [...A, E], AST.Tuple> => {
+    return make(AST.appendElement(self.ast, AST.element(element.ast, false)))
   }
 
 /**
@@ -356,11 +354,10 @@ export const element = <E>(element: Schema<E>) =>
  * @since 1.0.0
  */
 export const optionalElement = <E>(element: Schema<E>) =>
-  <A extends ReadonlyArray<any>>(self: Schema<A>): Schema<readonly [...A, E?]> => {
-    if (AST.isTuple(self.ast)) {
-      return make(AST.appendElement(self.ast, AST.element(element.ast, true)))
-    }
-    throw new Error("`optionalElement` is not supported on this schema")
+  <A extends ReadonlyArray<any>>(
+    self: Schema<A, AST.Tuple>
+  ): Schema<readonly [...A, E?], AST.Tuple> => {
+    return make(AST.appendElement(self.ast, AST.element(element.ast, true)))
   }
 
 /**
@@ -619,11 +616,11 @@ export const documentation = (documentation: A.Documentation) =>
 // data
 // ---------------------------------------------
 
-const _undefined: Schema<undefined> = I._undefined
+const _undefined: Schema<undefined, AST.UndefinedKeyword> = I._undefined
 
-const _void: Schema<void> = I._void
+const _void: Schema<void, AST.VoidKeyword> = I._void
 
-const _null: Schema<null> = I._null
+const _null: Schema<null, AST.Literal> = I._null
 
 export {
   /**
@@ -647,13 +644,13 @@ export {
  * @category primitives
  * @since 1.0.0
  */
-export const never: Schema<never> = I.never
+export const never: Schema<never, AST.NeverKeyword> = I.never
 
 /**
  * @category primitives
  * @since 1.0.0
  */
-export const unknown: Schema<unknown> = I.unknown
+export const unknown: Schema<unknown, AST.UnknownKeyword> = I.unknown
 
 /**
  * @category primitives
@@ -665,37 +662,37 @@ export const any: Schema<any> = I.any
  * @category primitives
  * @since 1.0.0
  */
-export const string: Schema<string> = I.string
+export const string: Schema<string, AST.StringKeyword> = I.string
 
 /**
  * @category primitives
  * @since 1.0.0
  */
-export const number: Schema<number> = I.number
+export const number: Schema<number, AST.NumberKeyword> = I.number
 
 /**
  * @category primitives
  * @since 1.0.0
  */
-export const boolean: Schema<boolean> = I.boolean
+export const boolean: Schema<boolean, AST.BooleanKeyword> = I.boolean
 
 /**
  * @category primitives
  * @since 1.0.0
  */
-export const bigint: Schema<bigint> = I.bigint
+export const bigint: Schema<bigint, AST.BigIntKeyword> = I.bigint
 
 /**
  * @category primitives
  * @since 1.0.0
  */
-export const symbol: Schema<symbol> = I.symbol
+export const symbol: Schema<symbol, AST.SymbolKeyword> = I.symbol
 
 /**
  * @category primitives
  * @since 1.0.0
  */
-export const object: Schema<object> = I.object
+export const object: Schema<object, AST.ObjectKeyword> = I.object
 
 /**
  * @category data
